@@ -11,5 +11,5 @@ do
     echo $i;
     ./bin/computePatchOpt $i/source $i/target > $i/patch;
     ./bin/applyPatch $i/patch $i/source > $i/targetPatched;
-    diff $i/target $i/targetPatched;
+#    diff $i/target $i/targetPatched;
 done

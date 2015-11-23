@@ -6,17 +6,12 @@
 #include<stdio.h>
 #include<string.h>
 
-void fileOpen(FILE **f, char *name) {
-   *f = fopen(name, "r");
-	if (f==NULL) {fprintf(stderr, "!!!!! Error opening %s !!!!! \n", name); exit(EXIT_FAILURE);}
-}
-
 struct Coord {
     int k; //la ligne
     int l; //la colonne
 };
 
-int minInst(int tl0k_1, int tl0k, int k, size_t n, int tl[n+1], int l, size_t m, struct Coord pred[n+1][m+1]) {
+int minInst(int tl0k_1, int tl0k, int k, size_t n, int tl[n+1], int l, size_t m, struct Coord **pred) {
     int actual_min = min(tl0k_1, tl0k);
 
     pred[k][l].l = l-1;
@@ -44,17 +39,8 @@ int minInst(int tl0k_1, int tl0k, int k, size_t n, int tl[n+1], int l, size_t m,
     return actual_min;
 }
 
-void outputCoordMatrix(size_t n, size_t m, struct Coord pred[n+1][m+1]) {
-    for(int i=0; i<=n; i++) {
-        for(int j=0; j<=m; j++) {
-            printf("(%i, %i) ", pred[i][j].k, pred[i][j].l);
-        }
-        printf("\n");
-    }
-}
-
 void evaluateSucc(size_t n, size_t m, int start_succ, struct Coord succ[n+m+2], 
-        int c[n][m], int lengthLineF2[m], int offLineF2[m], FILE *f2) {
+        int **c, int lengthLineF2[m], int offLineF2[m], FILE *f2) {
     //on a besoin d'un compteur pour les destructions et les substitutions
     int f1_count = 0;
     int f2_count = 0;
@@ -68,9 +54,10 @@ void evaluateSucc(size_t n, size_t m, int start_succ, struct Coord succ[n+m+2],
         //on regarde de quelle opération il s'agit
         if(k_succ == k) {
             //il s'agit d'un ajout
-            printf("+ %i\n", k_succ);
+//            printf("+ %i\n", k_succ);
+            printf("+ %i\n", f1_count);
             //on charge la ligne correspondante
-            char f2_j[lengthLineF2[l_succ]];  
+            char f2_j[lengthLineF2[l_succ-1]];  
             fseek(f2, offLineF2[l_succ-1], SEEK_SET);
             fgets(f2_j, lengthLineF2[l_succ-1], f2);
             printf("%s\n", f2_j);
@@ -81,7 +68,7 @@ void evaluateSucc(size_t n, size_t m, int start_succ, struct Coord succ[n+m+2],
             if(c[f1_count][f2_count] != 0) {
                 printf("= %i\n", k_succ);
                 //on charge la ligne correspondante
-                char f2_j[lengthLineF2[l_succ]];  
+                char f2_j[lengthLineF2[l_succ-1]];  
                 fseek(f2, offLineF2[l_succ-1], SEEK_SET);
                 fgets(f2_j, lengthLineF2[l_succ-1], f2);
                 printf("%s\n", f2_j);
@@ -96,8 +83,10 @@ void evaluateSucc(size_t n, size_t m, int start_succ, struct Coord succ[n+m+2],
             //il s'agit d'une destruction
             if(k_succ == (k+1)) {
                 //destruction simple
-                printf("d %i\n", ++f1_count);
+                printf("d %i\n", f1_count+1);
+                f1_count++;
             } else {
+//                printf("D %i %i\n", f1_count+1, k_succ-k);
                 printf("D %i %i\n", f1_count+1, k_succ-k);
                 f1_count += k_succ -k;
             }
@@ -107,7 +96,7 @@ void evaluateSucc(size_t n, size_t m, int start_succ, struct Coord succ[n+m+2],
     }
 }
 
-void findPath(size_t n, size_t m, struct Coord pred[n+1][m+1], int c[n][m], 
+void findPath(size_t n, size_t m, struct Coord **pred, int **c, 
         int lengthLineF2[m], int offLineF2[m], FILE *f2) {
     struct Coord pred_tmp;
     pred_tmp.k = pred[n][m].k;
@@ -119,7 +108,7 @@ void findPath(size_t n, size_t m, struct Coord pred[n+1][m+1], int c[n][m],
 
     k = n;
     l = m;
-    while((pred_tmp.k!=0) &&(pred_tmp.l!=0)) {
+    while((pred_tmp.k!=0) || (pred_tmp.l!=0)) {
         succ[start_succ].k = k;
         succ[start_succ--].l = l;
         k = pred_tmp.k;
@@ -130,24 +119,34 @@ void findPath(size_t n, size_t m, struct Coord pred[n+1][m+1], int c[n][m],
     succ[start_succ].k = k;
     succ[start_succ--].l = l;
     succ[start_succ].k = pred_tmp.k;
-    succ[start_succ--].l = pred_tmp.l;
-    succ[start_succ].k = 0;
-    succ[start_succ].l = 0;
+    succ[start_succ].l = pred_tmp.l;
+//    succ[start_succ--].l = pred_tmp.l;
+//    succ[start_succ].k = 0;
+//    succ[start_succ].l = 0;
     evaluateSucc(n, m, start_succ, succ, c, lengthLineF2, offLineF2, f2);
 }
 
-void findPatch(size_t n, size_t m, int c[n][m],  int lengthLineF2[m], 
+void outputCoordMatrix(size_t n, size_t m, struct Coord **pred) {
+    for(int i=0; i<=n; i++) {
+        for(int j=0; j<=m; j++) {
+            printf("(%i, %i) ", pred[i][j].k, pred[i][j].l);
+        }
+        printf("\n");
+    }
+}
+
+
+void findPatch(size_t n, size_t m, int **c,  int lengthLineF2[m], 
         int offLineF2[m], FILE *f2) {
     int tl0[n+1];
     int tl[n+1];
     //pour pouvoir repérer le chemin, on va utiliser une matriced de 
     //prédecesseurs
-    struct Coord pred[n+1][m+1];
-    for(int i=0; i<=n; i++) {
-        for(int j=0; j<=m; j++) {
-            pred[i][j].k = -1;
-            pred[i][j].l = -1;
-        }
+//    struct Coord pred[n+1][m+1];
+    struct Coord **pred;
+    pred = malloc((n+1)*sizeof(struct Coord*));
+    for(int i=0; i<(n+1); i++) {
+        pred[i] = malloc((m+1)*sizeof(struct Coord));
     }
 
     //CI
@@ -178,17 +177,16 @@ void findPatch(size_t n, size_t m, int c[n][m],  int lengthLineF2[m],
             tl0[q] = tl[q];
         }
     }
-//    printf("%i\n", tl[n]);
+//    outputCoordMatrix(n, m, pred);
+    fprintf(stderr, "%i\n", tl[n]);
     findPath(n, m, pred, c, lengthLineF2, offLineF2, f2);
-}
-
-int main(int argc, char *argv[]) {
-    int c[6][7] = {{15, 0, 12, 14, 12, 12, 13}, {15, 13, 12, 0, 12, 12, 13}, {15, 13, 12, 14, 12, 12, 13}, {15, 13, 12, 14, 12, 12, 13}, {15, 13, 12, 14, 12, 12, 13}, {15, 13, 12, 14, 12, 0, 13} };
-
-    int L[7] = {5, 4, 2, 4, 2, 2, 3};
-    int offLineF2[7] = {0, 5, 9, 11, 15, 17, 19};
-    FILE *f2; 
-    fileOpen(&f2, "f2.txt");
-    findPatch(6, 7, c, L, offLineF2, f2);
-    return 0;
+    //désallocation de la mémoire
+    if(pred!=NULL) {
+        for(int i=0; i<(n+1); i++) {
+            if(pred[i]!=NULL) {
+                free(pred[i]);
+            }
+        }
+        free(pred);
+    }
 }

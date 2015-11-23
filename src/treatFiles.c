@@ -1,8 +1,7 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-int max_length = 100;
+#include<stdlib.h>
+#include<stdio.h>
+#include<string.h>
+#include"treatFiles.h"
 
 void fileOpen(FILE **f, char *name) {
    *f = fopen(name, "r");
@@ -11,24 +10,18 @@ void fileOpen(FILE **f, char *name) {
 
 int getLengthFromFile(FILE *f) {
     int n = 0;
-    char buffer[max_length];
+    char buffer;
 
-    while(fgets(buffer, max_length, f)!=NULL)
+    buffer = fgetc(f);
+    while(buffer!=EOF)
     {
-        n++;
+        if(buffer=='\n')
+        {
+            n++;
+        }
+        buffer = fgetc(f);
     }
     return n;
-}
-
-void outputIntMatrix(size_t n, size_t m, int **c) {
-    printf("Sortie de la matrice\n");
-    for(int i=0; i<n; i++) {
-        for(int j=0; j<m; j++) {
-            printf(" %i ", c[i][j]);
-        }
-        printf("\n");
-    }
-    printf("\n");
 }
 
 //fonction calculant le nombre de caractères par lignes et le tableau des offsets
@@ -77,13 +70,8 @@ void computeCostsEff(size_t n, size_t m, int **c, FILE *f1, FILE *f2,
     }
 }
 
-void treatFiles(FILE *f1, FILE *f2, char *name1, char *name2) {
-
-    //on récupère les longueurs des fichiers
-    int n = getLengthFromFile(f1);
-    int m = getLengthFromFile(f2);
-    printf("longueur du premier fichier: %i\n", n);
-    printf("longueur du deuxième fichier: %i\n", m);
+void treatFiles(FILE *f1, FILE *f2, char *name1, char *name2, size_t n, size_t m, 
+        int **c, int offLineF2[m], int lengthLineF2[m]) {
 
     //il faut parcourir les deux fichiers une deuxième fois
     //pour récupérer toutes les lignes des deux fichiers
@@ -94,54 +82,9 @@ void treatFiles(FILE *f1, FILE *f2, char *name1, char *name2) {
     int lengthLineF1[n];
     int offLineF1[n];
     auxStruct(f1, n, lengthLineF1, offLineF1);
-    int lengthLineF2[m];
-    int offLineF2[m];
     auxStruct(f2, m, lengthLineF2, offLineF2);
-    for(int j=0; j<m; j++) {
-        printf("%i\n", lengthLineF2[j]);
-    }
 
-    //calcul de la matrice des coûts
-    int **c;
-    if((c = malloc(n*sizeof(int*)))!=NULL) {
-        for(int i=0; i<n; i++) {
-            c[i] = malloc(m*sizeof(int));
-        }
-    }
-    computeCostsEff(n, m, c, f1, f2, lengthLineF1, lengthLineF2,
+   computeCostsEff(n, m, c, f1, f2, lengthLineF1, lengthLineF2,
             offLineF1, offLineF2);
-//    outputIntMatrix(n, m, c);
-    //désallocation de la mémoire
-    if(c!=NULL) {
-        for(int i=0; i<n; i++) {
-            if(c[i]!=NULL) {
-                free(c[i]);
-            }
-        }
-    free(c);
-    }
-}
-
-int main (int argc, char *argv[]) {
-	FILE *f1;
-	FILE *f2;
-	
-	if(argc<3){
-		fprintf(stderr, "!!!!! Usage: ./treatFiles firstFile secondFile !!!!!\n");
-	    exit(EXIT_FAILURE); /* indicate failure.*/
-	}
-
-    fileOpen(&f1, argv[1]);
-    fileOpen(&f2, argv[2]);
-
-    treatFiles(f1, f2, argv[1], argv[2]);
-
-    if(f1!=NULL) {
-        fclose(f1);
-    }
-    if(f2!=NULL) {
-        fclose(f2);
-    }
-
-    return 0;
+//    findPatch(n, m, c, lengthLineF2, offLineF2, f2);
 }
