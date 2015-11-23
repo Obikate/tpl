@@ -1,0 +1,50 @@
++ 0
+% New files for 4MMAOD
+= 11
+url="http://www.ietf.org/rfc/rfc1.txt",
+d 23
+= 24
+   url="http://www.ietf.org/rfc/rfc2.txt",
+D 99 9
+d 124
++ 190
+    Alsaid02,
+= 203
+    shankar2006,
+= 276
+    link-shi,
++ 327
+}
++ 327
+
++ 327
+@misc{
++ 327
+    yandexapi,
++ 327
+    author = {Yandex},
++ 327
+    title = {{Yandex Safe Browsing}},
++ 327
+    howpublished = {\url{http://api.yandex.com/safebrowsing/}}
++ 327
+}
++ 327
+
++ 327
+@misc{
++ 327
+    nortonsafeweb,
++ 327
+    author = {Symantec},
++ 327
+    title = {{Norton Safe Web}},
++ 327
+    howpublished = {\url{https://safeweb.norton.com/}}
+= 2853
+    url="http://www.ieee.org",
+= 2971
+  month=june,
+= 2985
+%    url="http://www.ietf.org/rfc/rfc151.txt",
+d 2999

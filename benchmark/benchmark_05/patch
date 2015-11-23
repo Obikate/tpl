@@ -1,0 +1,360 @@
++ 0
+// New GCC code for 4MMAOD
++ 0
+
+D 7 2
+D 35 20
+D 64 13
+D 119 13
++ 1732
+/* Define if you want more run-time sanity checks. This one gets a grab bag of
++ 1732
+   miscellaneous but relatively cheap checks. */
++ 1732
+/* #undef ENABLE_CHECKING */
++ 1732
+
++ 1732
+/* Define if you want fold checked that it never destructs its argument. This
++ 1732
+   is quite expensive. */
++ 1732
+/* #undef ENABLE_FOLD_CHECKING */
++ 1732
+
++ 1732
+/* Define if you want the garbage collector to operate in maximally paranoid
++ 1732
+   mode, validating the entire heap and collecting garbage at every
++ 1732
+   opportunity. This is extremely expensive. */
++ 1732
+/* #undef ENABLE_GC_ALWAYS_COLLECT */
++ 1732
+
++ 3922
+union PREFIX(fail_stack_elt)
++ 3922
+{
++ 3922
+  UCHAR_T *pointer;
++ 3922
+  long int integer;
++ 3922
+};
++ 3922
+
++ 3922
+typedef union PREFIX(fail_stack_elt) PREFIX(fail_stack_elt_t);
++ 3922
+
++ 3922
+typedef struct
++ 3922
+{
++ 3922
+  PREFIX(fail_stack_elt_t) *stack;
++ 3922
+  unsigned long int size;
++ 3922
+  unsigned long int avail;		/* Offset of next open position.  */
++ 3922
+} PREFIX(fail_stack_type);
++ 3922
+
++ 3922
+# else /* not INT_IS_16BIT */
++ 3922
+
++ 3922
+#  ifndef DEFINED_ONCE
++ 3922
+#   if defined MATCH_MAY_ALLOCATE
++ 3922
+/* 4400 was enough to cause a crash on Alpha OSF/1,
++ 3922
+   whose default stack limit is 2mb.  */
++ 3922
+int re_max_failures = 4000;
++ 3922
+#   else
++ 3922
+int re_max_failures = 2000;
++ 3922
+#   endif
++ 3922
+#  endif
++ 3922
+
++ 3922
+union PREFIX(fail_stack_elt)
++ 3922
+{
++ 3922
+  UCHAR_T *pointer;
++ 3922
+  int integer;
++ 3922
+};
++ 3922
+
++ 3922
+typedef union PREFIX(fail_stack_elt) PREFIX(fail_stack_elt_t);
++ 3922
+
++ 3922
+typedef struct
++ 3922
+{
++ 3922
+  PREFIX(fail_stack_elt_t) *stack;
++ 3922
+  unsigned size;
++ 3922
+  unsigned avail;			/* Offset of next open position.  */
++ 3922
+} PREFIX(fail_stack_type);
++ 3922
+
++ 3922
+# endif /* INT_IS_16BIT */
++ 3922
+
++ 3922
+# ifndef DEFINED_ONCE
++ 3922
+#  define FAIL_STACK_EMPTY()     (fail_stack.avail == 0)
++ 3922
+#  define FAIL_STACK_PTR_EMPTY() (fail_stack_ptr->avail == 0)
++ 3922
+#  define FAIL_STACK_FULL()      (fail_stack.avail == fail_stack.size)
++ 3922
+# endif
++ 3922
+
++ 3922
+
++ 3922
+/* Define macros to initialize and free the failure stack.
++ 3922
+   Do `return -2' if the alloc fails.  */
++ 3922
+
++ 3922
+# ifdef MATCH_MAY_ALLOCATE
++ 3922
+#  define INIT_FAIL_STACK()						\
++ 3922
+  do {									\
++ 3922
+    fail_stack.stack = (PREFIX(fail_stack_elt_t) *)		\
++ 3922
+      REGEX_ALLOCATE_STACK (INIT_FAILURE_ALLOC * sizeof (PREFIX(fail_stack_elt_t))); \
++ 3922
+									\
++ 3922
+    if (fail_stack.stack == NULL)				\
++ 3922
+      return -2;							\
++ 3922
+									\
++ 3922
+    fail_stack.size = INIT_FAILURE_ALLOC;			\
++ 3922
+    fail_stack.avail = 0;					\
++ 3922
+  } while (0)
++ 3922
+
++ 3922
+#  define RESET_FAIL_STACK()  REGEX_FREE_STACK (fail_stack.stack)
++ 3922
+# else
++ 3922
+#  define INIT_FAIL_STACK()						\
++ 3922
+  do {									\
++ 3922
+    fail_stack.avail = 0;					\
++ 3922
+  } while (0)
++ 3922
+
++ 3922
+#  define RESET_FAIL_STACK()
++ 3922
+# endif
++ 3922
+
++ 3922
+
++ 3922
+/* Double the size of FAIL_STACK, up to approximately `re_max_failures' items.
++ 3922
+
++ 3922
+   Return 1 if succeeds, and 0 if either ran out of memory
++ 3922
+   allocating space for it or it was already too large.
++ 3922
+
++ 3922
+   REGEX_REALLOCATE_STACK requires `destination' be declared.   */
++ 3922
+
++ 3922
+# define DOUBLE_FAIL_STACK(fail_stack)					\
++ 3922
+  ((fail_stack).size > (unsigned) (re_max_failures * MAX_FAILURE_ITEMS)	\
++ 3922
+   ? 0									\
++ 3922
+   : ((fail_stack).stack = (PREFIX(fail_stack_elt_t) *)			\
++ 3922
+        REGEX_REALLOCATE_STACK ((fail_stack).stack, 			\
++ 3922
+          (fail_stack).size * sizeof (PREFIX(fail_stack_elt_t)),	\
++ 3922
+          ((fail_stack).size << 1) * sizeof (PREFIX(fail_stack_elt_t))),\
++ 3922
+									\
++ 3922
+      (fail_stack).stack == NULL					\
++ 3922
+      ? 0								\
++ 3922
+      : ((fail_stack).size <<= 1, 					\
++ 3922
+         1)))
++ 3922
+
++ 3922
+
++ 3922
+/* Push pointer POINTER on FAIL_STACK.
++ 3922
+   Return 1 if was able to do so and 0 if ran out of memory allocating
++ 3922
+   space to do so.  */
++ 3922
+# define PUSH_PATTERN_OP(POINTER, FAIL_STACK)				\
++ 3922
+  ((FAIL_STACK_FULL ()							\
++ 3922
+    && !DOUBLE_FAIL_STACK (FAIL_STACK))					\
++ 3922
+   ? 0									\
++ 3922
+   : ((FAIL_STACK).stack[(FAIL_STACK).avail++].pointer = POINTER,	\
++ 3922
+      1))
++ 3922
+
++ 3922
+/* Push a pointer value onto the failure stack.
++ 3922
+   Assumes the variable `fail_stack'.  Probably should only
++ 3922
+   be called from within `PUSH_FAILURE_POINT'.  */
++ 3922
+# define PUSH_FAILURE_POINTER(item)					\
++ 3922
+  fail_stack.stack[fail_stack.avail++].pointer = (UCHAR_T *) (item)
++ 3922
+
++ 3922
+/* This pushes an integer-valued item onto the failure stack.
++ 3922
+   Assumes the variable `fail_stack'.  Probably should only
++ 3922
+   be called from within `PUSH_FAILURE_POINT'.  */
++ 3922
+# define PUSH_FAILURE_INT(item)					\
++ 3922
+  fail_stack.stack[fail_stack.avail++].integer = (item)
++ 3922
+
++ 3922
+/* Push a fail_stack_elt_t value onto the failure stack.
++ 3922
+   Assumes the variable `fail_stack'.  Probably should only
++ 3922
+   be called from within `PUSH_FAILURE_POINT'.  */
++ 3922
+# define PUSH_FAILURE_ELT(item)					\
++ 3922
+  fail_stack.stack[fail_stack.avail++] =  (item)
++ 3922
+
++ 3922
+/* These three POP... operations complement the three PUSH... operations.
++ 3922
+   All assume that `fail_stack' is nonempty.  */
++ 3922
+# define POP_FAILURE_POINTER() fail_stack.stack[--fail_stack.avail].pointer
++ 3922
+# define POP_FAILURE_INT() fail_stack.stack[--fail_stack.avail].integer
++ 3922
+# define POP_FAILURE_ELT() fail_stack.stack[--fail_stack.avail]
++ 3922
+
++ 3922
+/* Used to omit pushing failure point id's when we're not debugging.  */
++ 3922
+# ifdef DEBUG
++ 3922
+#  define DEBUG_PUSH PUSH_FAILURE_INT
++ 3922
+#  define DEBUG_POP(item_addr) *(item_addr) = POP_FAILURE_INT ()
++ 3922
+# else
++ 3922
+#  define DEBUG_PUSH(item)
++ 3922
+#  define DEBUG_POP(item_addr)
++ 3922
+# endif
++ 3922
+
++ 3922
+
++ 3922
+/* Push the information about the state we will need
++ 3922
+   if we ever fail back to it.
++ 3922
+
++ 3922
+   Requires variables fail_stack, regstart, regend, reg_info, and
++ 3922
+   num_regs_pushed be declared.  DOUBLE_FAIL_STACK requires `destination'
++ 3922
+   be declared.
++ 3922
+
++ 3922
+   Does `return FAILURE_CODE' if runs out of memory.  */
++ 3923
+# define PUSH_FAILURE_POINT(pattern_place, string_place, failure_code)	\
++ 3923
+  do {									\
++ 3923
+    char *destination;							\
++ 3923
+    /* Must be int, so when we don't save any registers, the arithmetic	\
++ 3923
+       of 0 + -1 isn't done as unsigned.  */				\
++ 3923
+    /* Can't be int, since there is not a shred of a guarantee that int	\
++ 3923
+       is wide enough to hold a value of something to which pointer can	\
++ 3923
+       be assigned */							\
++ 3923
+    active_reg_t this_reg;						\
++ 3923
+    									\
++ 3923
+ 
+D 4835 83
+D 4941 59

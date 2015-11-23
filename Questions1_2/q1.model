@@ -1,0 +1,28 @@
+#cardinal du fichier F_1
+param n;
+#cardinal du fichier F_2
+param m;
+
+#paramètres du problème
+param c{i in 1..n, j in 1..m};
+param L{i in 1..1, j in 1..m};
+
+#déclaration des variables
+var a{j in 1..m}, binary;
+var s{i in 1..n, j in 1..m}, binary;
+var d{i in 1..n}, binary;
+
+#fonction objective
+minimize obj: (sum{i in 1..n}10*d[i]) + (sum{i in 1..n, j in 1..m}c[i,j]*s[i,j]) + (sum{j in 1..m}(10+ L[1, j])*a[j]);
+
+#contraintes
+e1{j in 1..m}: a[j] + sum{i in 1..n}s[i,j] = 1;
+e2{i in 1..n}: d[i] + sum{j in 1..m}s[i,j] = 1;
+e3{i in 1..n, j in 1..m}: sum{k in 1..(i-1), l in (j+1)..m}s[k,l] <= (1 - s[i,j])*m;
+
+solve;
+display a;
+display s;
+display d;
+display obj;
+end;
