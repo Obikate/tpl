@@ -19,10 +19,17 @@ int main(int argc, char *argv[]) {
     //on récupère les longueurs des fichiers
     int n = getLengthFromFile(f1);
     int m = getLengthFromFile(f2);
+
+    if ((n == 0) && (m == 0))
+        return 0;
+
+    //structures auxiliaires nécessaires concernant le fichier F2
     int lengthLineF2[m];
     int offLineF2[m];
 
-    //calcul de la matrice des coûts
+    //allocation de la matrice des coûts
+    //l'allocation dynamique est nécessaire, car en général, les données
+    //sont trop grandes pour stocker une matrice
     int **c;
     if((c = malloc(n*sizeof(int*)))!=NULL) {
         for(int i=0; i<n; i++) {
@@ -30,8 +37,10 @@ int main(int argc, char *argv[]) {
         }
     }
  
-
+    //on calcule la matrice des coûts, le tableau des offsets et le tableau
+    //des longueurs des lignes
     treatFiles(f1, f2, argv[1], argv[2], n, m, c, offLineF2, lengthLineF2);
+    //calcul du patch optimal et affichage sur la sortie standard
     findPatch(n, m, c, lengthLineF2, offLineF2, f2);
 
     //désallocation de la mémoire

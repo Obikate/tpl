@@ -154,9 +154,11 @@ void findPatch(size_t n, size_t m, int **c,  int lengthLineF2[m],
     pred[0][0].k = 0;
     pred[0][0].l = 0;
 
-    tl0[1] = 10;
-    pred[1][0].k = 0;
-    pred[1][0].l = 0;
+    if (n != 0) {
+        tl0[1] = 10;
+        pred[1][0].k = 0;
+        pred[1][0].l = 0;
+    }
 
     for(int k=2; k<=n; k++) {
         tl0[k] = 15;
@@ -177,8 +179,12 @@ void findPatch(size_t n, size_t m, int **c,  int lengthLineF2[m],
             tl0[q] = tl[q];
         }
     }
-//    outputCoordMatrix(n, m, pred);
-    fprintf(stderr, "%i\n", tl[n]);
+    //outputCoordMatrix(n, m, pred);
+    if(m == 0) {
+        fprintf(stderr, "%i\n", tl0[n]);
+    } else {
+        fprintf(stderr, "%i\n", tl[n]);
+    }
     findPath(n, m, pred, c, lengthLineF2, offLineF2, f2);
     //désallocation de la mémoire
     if(pred!=NULL) {

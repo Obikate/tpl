@@ -9,7 +9,7 @@ bench_6=benchmark/benchmark_06;
 for i in $bench_1 $bench_2 $bench_3 $bench_4 $bench_5 $bench_6
 do
     echo $i;
-    ./bin/computePatchOpt $i/source $i/target > $i/patch;
+    time ./bin/computePatchOpt $i/source $i/target > $i/patch;
     ./bin/applyPatch $i/patch $i/source > $i/targetPatched;
-#    diff $i/target $i/targetPatched;
+    diff $i/target $i/targetPatched;
 done
