@@ -6,14 +6,32 @@
 #include<stdio.h>
 #include<string.h>
 
+/**
+ * La structure Coord nous sert à gérer la matrice des prédecesseurs
+ * pour trouver le bon patch.
+ */
 struct Coord {
     int k; //la ligne
     int l; //la colonne
 };
 
+/**
+ * Fonction calculant V(k, l), le noeud du graphe des dépendances. Il s'agit
+ * de l'étape principale de l'équation de Bellman.
+ *
+ * @param tl0k_1 : la valeur V(k-1, l-1), substitution
+ * @param tl0k : la valeur V(k, l-1), ajout
+ * @param k, l : les coordonnées actuelles dans le graphe des dépendances, i.e.
+ * l'étape courante.
+ * @param n : le nombre de lignes du fichier F1
+ * @param tl : le tableau contenant les valeurs V(*, l), de longueur n+1.
+ * @param pred : la matrice des prédecesseurs, de taille [n+1][m+1]
+ * @param *min_dest : la valeur minimale parmi les V(*, l).
+ * @param *min_dest_k : le k tel que V(k, l) est minimale parmi les V(*, l)
+ */
 int minInst(int tl0k_1, int tl0k, int k, size_t n, int tl[n+1], int l, 
-        size_t m, struct Coord **pred, int *min_dest, 
-        int *min_dest_k) {
+        struct Coord **pred, int *min_dest, int *min_dest_k) {
+    //on compare parmi l'ajout et la substitution
     int actual_min = min(tl0k_1, tl0k);
 
     pred[k][l].l = l-1;
@@ -22,8 +40,7 @@ int minInst(int tl0k_1, int tl0k, int k, size_t n, int tl[n+1], int l,
     } else { //il s'agit d'un ajout
         pred[k][l].k = k;
     }
-//        printf("min_dest: %i, min_dest_k: %i\n", *min_dest, *min_dest_k);
-//        printf("actual_min: %i\n", actual_min);
+    //ou bien il s'agit d'une destruction multiple
     if (actual_min > *min_dest + 15) {
         pred[k][l].k = *min_dest_k;
         pred[k][l].l = l;
@@ -33,11 +50,11 @@ int minInst(int tl0k_1, int tl0k, int k, size_t n, int tl[n+1], int l,
         *min_dest = actual_min;
         *min_dest_k = k;
     }
+    //ou bien d'une destruction simple
     if (actual_min > tl[k-1] + 10) {
         pred[k][l].k = k-1;
         pred[k][l].l = l;
         actual_min = tl[k-1] + 10;
-        
     }
     if (actual_min < *min_dest) {
         *min_dest = actual_min;
@@ -46,6 +63,21 @@ int minInst(int tl0k_1, int tl0k, int k, size_t n, int tl[n+1], int l,
     return actual_min;
 }
 
+/**
+ * Fonction affichant le chemin trouvé par la méthode des prédecesseurs en
+ * le transformant en un vrai patch, i.e. en utilisant les notation "+ k", etc.
+ *
+ * @param n, m : tailles des fichiers F1, F2.
+ * @param start_succ : l'indice de départ pour trouver le chemin dans le 
+ * tableau succ.
+ * @param succ : le tableau contenant le chemin du patch.
+ * @param c : la matrice des coûts de taille [n][m]. Nécessaire pour 
+ * regarder s'il s'agit d'une substitution triviale.
+ * @param lengthLineF2 : tableau de taille [m] tel que lengthLineF2[i]=|F2(i)|
+ * @param offLineF2 : tableau de taille [m] tel que offLineF2[i] contient le
+ * offset de F2(i)
+ * @param f2 : pointeur du fichier F2, avant: ouvert, après: ouvert.
+ */
 void evaluateSucc(size_t n, size_t m, int start_succ, struct Coord succ[n+m+2], 
         int **c, int lengthLineF2[m], int offLineF2[m], FILE *f2) {
     //on a besoin d'un compteur pour les destructions et les substitutions
@@ -59,33 +91,30 @@ void evaluateSucc(size_t n, size_t m, int start_succ, struct Coord succ[n+m+2],
         k_succ = succ[i].k;
         l_succ = succ[i].l;
         //on regarde de quelle opération il s'agit
-        if(k_succ == k) {
-            //il s'agit d'un ajout
-//            printf("+ %i\n", k_succ);
-            printf("+ %i\n", f1_count);
+        if (l_succ == (l+1)) {
+            //il s'agit soit d'un ajout soit d'une substitution
             //on charge la ligne correspondante
             char f2_j[lengthLineF2[l_succ-1]];  
             fseek(f2, offLineF2[l_succ-1], SEEK_SET);
             fgets(f2_j, lengthLineF2[l_succ-1], f2);
-            printf("%s\n", f2_j);
-            f2_count++;
-        }
-        if((k_succ == (k+1)) && (l_succ == (l+1))) {
-            //il s'agit d'une substitution
-            if(c[f1_count][f2_count] != 0) {
-                printf("= %i\n", k_succ);
-                //on charge la ligne correspondante
-                char f2_j[lengthLineF2[l_succ-1]];  
-                fseek(f2, offLineF2[l_succ-1], SEEK_SET);
-                fgets(f2_j, lengthLineF2[l_succ-1], f2);
+
+            if (k_succ == k) {
+                //il s'agit d'un ajout
+                printf("+ %i\n", f1_count);
                 printf("%s\n", f2_j);
-                f1_count++;
                 f2_count++;
             } else {
-                f2_count++;
+                //il s'agit d'une substitution
+                if(c[f1_count][f2_count] != 0) {
+                    //substitution non-triviale
+                    printf("= %i\n", k_succ);
+                    printf("%s\n", f2_j);
+                }
                 f1_count++;
+                f2_count++;
             }
         }
+        
         if(l_succ == l) {
             //il s'agit d'une destruction
             if(k_succ == (k+1)) {
@@ -93,61 +122,86 @@ void evaluateSucc(size_t n, size_t m, int start_succ, struct Coord succ[n+m+2],
                 printf("d %i\n", f1_count+1);
                 f1_count++;
             } else {
-//                printf("D %i %i\n", f1_count+1, k_succ-k);
                 printf("D %i %i\n", f1_count+1, k_succ-k);
                 f1_count += k_succ -k;
             }
         }
+        //mise à jour des variables de parcours
         k = k_succ;
         l = l_succ;
     }
 }
 
+/**
+ * Fonction parcourant la matrice des prédecesseurs en prenant le chemin des
+ * prédecesseurs pour trouver le bon patch.
+ *
+ * @param n, m : tailles des fichiers F1, F2
+ * @param pred : matrice des prédecesseurs de taille [n+1][m+1]
+ * @param c : la matrice des coûts de taille [n][m]
+ * @param lengthLineF2 : tableau de taille [m] tel que lengthLineF2[i]=|F2(i)|
+ * @param offLineF2 : tableau de taille [m] tel que offLineF2[i] contient le
+ * offset de F2(i)
+ * @param f2 : pointeur du fichier F2, avant: ouvert, après: ouvert.
+ */
 void findPath(size_t n, size_t m, struct Coord **pred, int **c, 
         int lengthLineF2[m], int offLineF2[m], FILE *f2) {
+    //pred_tmp sert juste à stocker temporairement les coordonnées 
+    //du parcours
     struct Coord pred_tmp;
+    //on commence avec le point en bas à droite, la dernière cellule
+    //de la matrice
     pred_tmp.k = pred[n][m].k;
     pred_tmp.l = pred[n][m].l;
     int k, l;
-    //on va stocker les successeurs dans un tableau
+    //on va stocker les successeurs dans un tableau.
+    //le chemin maximal est de longueur n+m+2, en prenant p.ex. que des 
+    //ajouts et que des destructions simples
     struct Coord succ[n+m+2];
     int start_succ = n+m+1;
 
     k = n;
     l = m;
+    //tant qu'on n'est pas arrivé
     while((pred_tmp.k!=0) || (pred_tmp.l!=0)) {
+        //on met le chemin pris dans le tableau
         succ[start_succ].k = k;
         succ[start_succ--].l = l;
+        //mise à jour des coordonnées du parcours
         k = pred_tmp.k;
         l = pred_tmp.l;
         pred_tmp.k = pred[k][l].k;
         pred_tmp.l = pred[k][l].l;
     }
+    //on rajoute encore les deux derniers points qu'on n'a pas encore 
+    //sauvegardé à cause du critère d'arrêt
     succ[start_succ].k = k;
     succ[start_succ--].l = l;
     succ[start_succ].k = pred_tmp.k;
     succ[start_succ].l = pred_tmp.l;
-//    succ[start_succ--].l = pred_tmp.l;
-//    succ[start_succ].k = 0;
-//    succ[start_succ].l = 0;
+    //on passe à l'affichage du patch
     evaluateSucc(n, m, start_succ, succ, c, lengthLineF2, offLineF2, f2);
 }
 
-void outputCoordMatrix(size_t n, size_t m, struct Coord **pred) {
-    for(int i=0; i<=n; i++) {
-        for(int j=0; j<=m; j++) {
-            printf("(%i, %i) ", pred[i][j].k, pred[i][j].l);
-        }
-        printf("\n");
-    }
-}
-
-
-void findPatch(size_t n, size_t m, int **c,  int lengthLineF2[m], 
+/**
+ * Fonction de départ du calcul du patch optimal. Assemblage des autres 
+ * fonctions de ce fichier.
+ *
+ * @param n, m : tailles des fichiers F1, F2
+ * @param c : la matrice des coûts de taille [n][m]
+ * @param lengthLineF2 : tableau de taille [m] tel que lengthLineF2[i]=|F2(i)|
+ * @param offLineF2 : tableau de taille [m] tel que offLineF2[i] contient le
+ * offset de F2(i)
+ * @param f2 : pointeur du fichier F2. Avant: ouvert. Après: ouvert.
+ */
+int findPatch(size_t n, size_t m, int **c,  int lengthLineF2[m], 
         int offLineF2[m], FILE *f2) {
+    int result = 0;
+    //on a opté pour un parcours itératif, on a donc besoin de se rappeler de
+    //deux colonnes.
     int tl0[n+1];
     int tl[n+1];
-    //pour pouvoir repérer le chemin, on va utiliser une matriced de 
+    //pour pouvoir repérer le chemin, on va utiliser une matrice de 
     //prédecesseurs
     struct Coord **pred;
     pred = malloc((n+1)*sizeof(struct Coord*));
@@ -160,7 +214,7 @@ void findPatch(size_t n, size_t m, int **c,  int lengthLineF2[m],
     pred[0][0].k = 0;
     pred[0][0].l = 0;
 
-    if (n != 0) {
+    if (n != 0) {//il faut traiter le cas où le fichier F1 est vide
         tl0[1] = 10;
         pred[1][0].k = 0;
         pred[1][0].l = 0;
@@ -183,18 +237,17 @@ void findPatch(size_t n, size_t m, int **c,  int lengthLineF2[m],
         for(int k=1; k<=n; k++) {
             //c'est ici qu'on implémente l'équation de bellman
             tl[k] = minInst(tl0[k-1] + c[k-1][l-1], tl0[k] + 10 + lengthLineF2[l-1], 
-                    k, n, tl, l, m, pred, &min_dest, &min_dest_k);
+                    k, n, tl, l, pred, &min_dest, &min_dest_k);
         }
         //recopie
-        for(int q=0; q <(n+1); q++) {
-            tl0[q] = tl[q];
+        for(int p = 0; p < (n+1); p++) {
+            tl0[p] = tl[p];
         }
     }
-//    outputCoordMatrix(n, m, pred);
-    if(m == 0) {
-        fprintf(stderr, "%i\n", tl0[n]);
+    if(m  == 0) {
+        result = tl0[n];
     } else {
-        fprintf(stderr, "%i\n", tl[n]);
+        result = tl[n];
     }
     findPath(n, m, pred, c, lengthLineF2, offLineF2, f2);
     //désallocation de la mémoire
@@ -206,4 +259,5 @@ void findPatch(size_t n, size_t m, int **c,  int lengthLineF2[m],
         }
         free(pred);
     }
+    return result;
 }

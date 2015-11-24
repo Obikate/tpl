@@ -41,7 +41,8 @@ int main(int argc, char *argv[]) {
     //des longueurs des lignes
     treatFiles(f1, f2, argv[1], argv[2], n, m, c, offLineF2, lengthLineF2);
     //calcul du patch optimal et affichage sur la sortie standard
-    findPatch(n, m, c, lengthLineF2, offLineF2, f2);
+    int result = findPatch(n, m, c, lengthLineF2, offLineF2, f2);
+    fprintf(stderr, "Coût optimal: %i\n", result);
 
     //désallocation de la mémoire
     if(c!=NULL) {
