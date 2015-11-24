@@ -11,7 +11,9 @@ struct Coord {
     int l; //la colonne
 };
 
-int minInst(int tl0k_1, int tl0k, int k, size_t n, int tl[n+1], int l, size_t m, struct Coord **pred) {
+int minInst(int tl0k_1, int tl0k, int k, size_t n, int tl[n+1], int l, 
+        size_t m, struct Coord **pred, int *min_dest, 
+        int *min_dest_k) {
     int actual_min = min(tl0k_1, tl0k);
 
     pred[k][l].l = l-1;
@@ -20,21 +22,26 @@ int minInst(int tl0k_1, int tl0k, int k, size_t n, int tl[n+1], int l, size_t m,
     } else { //il s'agit d'un ajout
         pred[k][l].k = k;
     }
-    for(int p=0; p<(k-1); p++) {
-        int min_before = actual_min;
-        actual_min = min(actual_min, 15 + tl[p]);
-        if(actual_min < min_before) {
-            //multi-destruction
-            pred[k][l].k = p;
-            pred[k][l].l = l;
-        }
+//        printf("min_dest: %i, min_dest_k: %i\n", *min_dest, *min_dest_k);
+//        printf("actual_min: %i\n", actual_min);
+    if (actual_min > *min_dest + 15) {
+        pred[k][l].k = *min_dest_k;
+        pred[k][l].l = l;
+        actual_min = *min_dest + 15;
     }
-    int min_before = actual_min;
-    actual_min = min(actual_min, 10 + tl[k-1]);
-    if(actual_min < min_before) {
-        //multi-destruction
+    if (actual_min < *min_dest) {
+        *min_dest = actual_min;
+        *min_dest_k = k;
+    }
+    if (actual_min > tl[k-1] + 10) {
         pred[k][l].k = k-1;
         pred[k][l].l = l;
+        actual_min = tl[k-1] + 10;
+        
+    }
+    if (actual_min < *min_dest) {
+        *min_dest = actual_min;
+        *min_dest_k = k-1;
     }
     return actual_min;
 }
@@ -142,7 +149,6 @@ void findPatch(size_t n, size_t m, int **c,  int lengthLineF2[m],
     int tl[n+1];
     //pour pouvoir repérer le chemin, on va utiliser une matriced de 
     //prédecesseurs
-//    struct Coord pred[n+1][m+1];
     struct Coord **pred;
     pred = malloc((n+1)*sizeof(struct Coord*));
     for(int i=0; i<(n+1); i++) {
@@ -170,16 +176,21 @@ void findPatch(size_t n, size_t m, int **c,  int lengthLineF2[m],
         tl[0] = tl0[0] + 10 + lengthLineF2[0]; //dans l2, on commence avec la 1ère ligne
         pred[0][l].k = 0;
         pred[0][l].l = l-1;
+        //pour ne pas devoir chercher le min parmi les multidestructions,
+        //on le sauvegarde pour une ligne 
+        int min_dest = tl[0];
+        int min_dest_k = 0;
         for(int k=1; k<=n; k++) {
             //c'est ici qu'on implémente l'équation de bellman
-            tl[k] = minInst(tl0[k-1] + c[k-1][l-1], tl0[k] + 10 + lengthLineF2[l-1], k, n, tl, l, m, pred);
+            tl[k] = minInst(tl0[k-1] + c[k-1][l-1], tl0[k] + 10 + lengthLineF2[l-1], 
+                    k, n, tl, l, m, pred, &min_dest, &min_dest_k);
         }
         //recopie
         for(int q=0; q <(n+1); q++) {
             tl0[q] = tl[q];
         }
     }
-    //outputCoordMatrix(n, m, pred);
+//    outputCoordMatrix(n, m, pred);
     if(m == 0) {
         fprintf(stderr, "%i\n", tl0[n]);
     } else {

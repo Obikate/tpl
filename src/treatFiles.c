@@ -73,7 +73,15 @@ void auxStruct(FILE *f, size_t n, int lengthLine[n], int offLine[n]) {
 /**
  * Fonction remplissant la matrice des coûts.
  *
- * @param n, m : tailles des tableaux d'entrées et de la matrice c[n+1][m+1]
+ * @param n, m : tailles des tableaux d'entrées et de la matrice c[n][m].
+ * @param c : la matrice des coûts à remplir.
+ * @param f1, f2 : respectivement les pointeurs sur les fichiers F1 et F2.
+ * Ils doivent déjà être ouverts et ne seront pas fermés après la fin de 
+ * la fonction.
+ * @param lengthLineF1, lengthLineF2 : les tableaux des longueurs des lignes 
+ * des fichiers F1 et F2, y compris le caractère de fin de la ligne '\n'
+ * @param offLineF2 : le tableau des offsets du fichier F2. F2(j) commence
+ * après le offLineF2[j]ième caractère du fichier.
  */
 void computeCostsEff(size_t n, size_t m, int **c, FILE *f1, FILE *f2, 
         int lengthLineF1[n], int lengthLineF2[m], int offLineF1[n], int offLineF2[m]) {
@@ -101,6 +109,16 @@ void computeCostsEff(size_t n, size_t m, int **c, FILE *f1, FILE *f2,
     }
 }
 
+/**
+ * Fonction utilisant toutes les autres fonctions de ce fichier pour construire
+ * les structures nécessaires pour trouver le bon patch.
+ *
+ * @param f1, f2 : pointeur des fichiers F1, F2. Les fichiers doivnet déjà 
+ * être ouverts et ils le seront encore après l'excécution de la fonction.
+ * @param name1, name2 : les noms des fichiers F1, F2. Nécessaires pour 
+ * récuper F2(j) et F1(i) afin de comparer l'égalité dans le cas d'une 
+ * substitution.
+ */
 void treatFiles(FILE *f1, FILE *f2, char *name1, char *name2, size_t n, size_t m, 
         int **c, int offLineF2[m], int lengthLineF2[m]) {
 
@@ -115,7 +133,7 @@ void treatFiles(FILE *f1, FILE *f2, char *name1, char *name2, size_t n, size_t m
     auxStruct(f1, n, lengthLineF1, offLineF1);
     auxStruct(f2, m, lengthLineF2, offLineF2);
 
-   computeCostsEff(n, m, c, f1, f2, lengthLineF1, lengthLineF2,
+    //calcul final
+    computeCostsEff(n, m, c, f1, f2, lengthLineF1, lengthLineF2,
             offLineF1, offLineF2);
-//    findPatch(n, m, c, lengthLineF2, offLineF2, f2);
 }
