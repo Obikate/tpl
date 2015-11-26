@@ -244,6 +244,7 @@ int findPatch(size_t n, size_t m, int **c,  int lengthLineF2[m],
             tl0[p] = tl[p];
         }
     }
+    //on sauvegarde le résultat final
     if(m  == 0) {
         result = tl0[n];
     } else {
