@@ -65,7 +65,7 @@ int minInst(int tl0k_1, int tl0k, int k, size_t n, int tl[n+1], int l,
 
 /**
  * Fonction affichant le chemin trouvé par la méthode des prédecesseurs en
- * le transformant en un vrai patch, i.e. en utilisant les notation "+ k", etc.
+ * le transformant en un vrai patch, i.e. en utilisant les notations "+ k", etc.
  *
  * @param n, m : tailles des fichiers F1, F2.
  * @param start_succ : l'indice de départ pour trouver le chemin dans le 
@@ -155,8 +155,8 @@ void findPath(size_t n, size_t m, struct Coord **pred, int **c,
     pred_tmp.l = pred[n][m].l;
     int k, l;
     //on va stocker les successeurs dans un tableau.
-    //le chemin maximal est de longueur n+m+2, en prenant p.ex. que des 
-    //ajouts et que des destructions simples
+    //dans un cas très général, le chemin maximal est de longueur  
+    //n+m+2, en n'effectuant jamais de trajet "diagonal" (ie substitution)
     struct Coord succ[n+m+2];
     int start_succ = n+m+1;
 
