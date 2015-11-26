@@ -80,6 +80,8 @@ void auxStruct(FILE *f, size_t n, int lengthLine[n], int offLine[n]) {
  * la fonction.
  * @param lengthLineF1, lengthLineF2 : les tableaux des longueurs des lignes 
  * des fichiers F1 et F2, y compris le caractère de fin de la ligne '\n'
+ * @param offLineF1 : le tableau des offsets du fichier F1. F1(i) commence
+ * après le offLineF1[i]ième caractère du fichier.
  * @param offLineF2 : le tableau des offsets du fichier F2. F2(j) commence
  * après le offLineF2[j]ième caractère du fichier.
  */
@@ -118,6 +120,11 @@ void computeCostsEff(size_t n, size_t m, int **c, FILE *f1, FILE *f2,
  * @param name1, name2 : les noms des fichiers F1, F2. Nécessaires pour 
  * récuper F2(j) et F1(i) afin de comparer l'égalité dans le cas d'une 
  * substitution.
+ * @param n, m : tailles des fichiers F1, F2
+ * @param c : matrice des coûts de taille [n][m]
+ * @param lengthLineF2 : tableau de taille [m] tel que lengthLineF2[i]=|F2(i)|
+ * @param offLineF2 : tableau de taille [m] tel que offLineF2[i] contient le
+ *
  */
 void treatFiles(FILE *f1, FILE *f2, char *name1, char *name2, size_t n, size_t m, 
         int **c, int offLineF2[m], int lengthLineF2[m]) {
