@@ -5,7 +5,6 @@
  *  \version   1.0
  *  \date      2015
  *  \warning   Usage: applyPatch patchFile originalFile 
- *  \copyright GNU Public License.
  */
 
 #include <stdio.h>

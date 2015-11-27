@@ -60,5 +60,5 @@ int main(int argc, char *argv[]) {
     if(f2!=NULL) {
         fclose(f2);
     }
-    return 0;
+    return result;
 }
