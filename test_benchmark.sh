@@ -11,7 +11,7 @@ do
     for i in $bench_1 $bench_2 $bench_3 $bench_4 $bench_5 $bench_6
     do
         echo $i;
-        time ./bin/computePatchOpt $i/source $i/target > $i/patch -j8;
+        ./bin/computePatchOpt $i/source $i/target > $i/patch;
         ./bin/applyPatch $i/patch $i/source > $i/targetPatched -j8;
         diff $i/target $i/targetPatched;
     done
