@@ -1,8 +1,8 @@
 CC=gcc
 LATEXC=pdflatex
 DOCC=doxygen
-CFLAGS_APPLY=-g -Wall
-CFLAGS_COMPUTE=-g -Wall -std=c99 -O3
+CFLAGS_APPLY=-g -Wall 
+CFLAGS_COMPUTE=-g -Wall -std=c99 -O3 
 CFLAGS_OBJ=-c -Wall -std=c99 -O3
 
 REFDIR=.
@@ -17,15 +17,22 @@ CSOURCE=$(wildcard $(SRCDIR)/applyPatch.c )
 CSOURCE1=$(wildcard $(SRCDIR)/treatFiles.c)
 CSOURCE2=$(wildcard $(SRCDIR)/findPatch.c)
 CSOURCE3=$(wildcard $(SRCDIR)/computePatchOpt.c)
-CSOURCE4=$(wildcard $(SRCDIR)/computePatchOpt_2.c)
+CSOURCE4=$(wildcard $(SRCDIR)/writeData-plne.c)
+CSOURCE5=$(wildcard $(SRCDIR)/findPatch-plne.c)
 PDF=$(LATEXSOURCE:.tex=.pdf)
 
 all: binary report doc compute
 
 $(BINDIR)/applyPatch: $(CSOURCE)
-	$(CC) $(CFLAGS)  $^ -o $@
+	$(CC) $(CFLAGS_APPLY)  $^ -o $@
+
+$(BINDIR)/findPatch-plne: $(CSOURCE5)
+	$(CC) $(CFLAGS_APPLY)  $^ -o $@
 
 $(BINDIR)/computePatchOpt: $(CSOURCE3) $(BINDIR)/treatFiles.o $(BINDIR)/findPatch.o
+	$(CC) $(CFLAGS_COMPUTE)  -I $(INCDIR) $^ -o $@
+
+$(BINDIR)/writeData-plne: $(CSOURCE4) $(BINDIR)/treatFiles.o $(BINDIR)/findPatch.o
 	$(CC) $(CFLAGS_COMPUTE)  -I $(INCDIR) $^ -o $@
 
 $(BINDIR)/treatFiles.o: $(CSOURCE1)
@@ -42,6 +49,7 @@ $(DOCDIR)/index.html: $(SRCDIR)/Doxyfile $(CSOURCE)
 
 binary: $(BINDIR)/applyPatch
 compute: $(BINDIR)/computePatchOpt
+compute-plne: $(BINDIR)/writeData-plne $(BINDIR)/findPatch-plne
 
 report: $(PDF) 
 
