@@ -1,5 +1,5 @@
 #! /bin/bash
 
 ./bin/writeData-plne $1 $2
-time glpsol --model q.model --data donnees.data >> data
+glpsol --model q.model --data donnees.data >> data
 ./bin/findPatch-plne $1 $2 
