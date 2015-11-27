@@ -1,9 +1,7 @@
-s
-d
-f
+@#?!
+a b
+u
+ccc
+v
 g
-h
-j
-k
-l
-
+ww
